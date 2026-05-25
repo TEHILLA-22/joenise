@@ -83,13 +83,15 @@ PHASE 5 — COMMERCE CORE
 10. Shipment orchestration
 
 #phase 6
-1. Dispute management
-2. Refund engine
-3. Seller ratings
-4. Saved suppliers
-5. Seller operational APIs
-6. CSV imports
-7. Analytics APIs
+1. Seller operational APIs
+2. Analytics APIs
+3. Observability
+4. Audit hardening
+5. Rate limiting
+6. Monitoring
+7. DevOps pipelines
+8. Deployment architecture
+9. Frontend integration
 
 
 1. Wallet model
@@ -321,3 +323,35 @@ None of those are required for a serious MVP.
 ONE IMPORTANT THING TO KEEP IN MIND
 From now onward:
 EVERY business model must be organization-scoped
+
+
+
+
+
+
+
+#######PRECAUTIONARIES########
+Search your codebase for:
+
+.objects.all()
+
+Especially on:
+
+orders
+quotations
+payments
+disputes
+shipments
+inventory
+
+Replace with:
+
+.objects.for_organization(
+    request.organization
+)
+
+or:
+
+.filter(
+    organization=request.organization
+)

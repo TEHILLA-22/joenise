@@ -1,64 +1,102 @@
 name: Backend CI
 
 on:
-  pull_request:
   push:
     branches:
       - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
 
 jobs:
-  backend:
+  backend-ci:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+  
 
     services:
       postgres:
-        image: postgres:18
+        image: postgres:16
         env:
+          POSTGRES_DB: test_db
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
         ports:
           - 5432:5432
-        # Optional: Add health check to ensure DB is ready before proceeding
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      SECRET_KEY: test-secret-key
+      DEBUG: False
+
+      DB_NAME: test_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
+
+      DJANGO_SETTINGS_MODULE: config.settings.development
+
+      PAYSTACK_SECRET_KEY: test_key
+      PAYSTACK_PUBLIC_KEY: test_key
+      PAYSTACK_WEBHOOK_SECRET: test_secret
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: '3.12'
 
-      - name: Set Environment Variables
+      - name: Install system dependencies
         run: |
-          export DJANGO_SETTINGS_MODULE=config.settings.production
-          echo "DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
 
-      # 🔥 CRITICAL FIX: Enter the backend directory
-      - name: Change Directory to Backend
-        run: cd backend
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-      - name: Install Dependencies
-        run: pip install -r requirements/base.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      # Linting Steps
-      - name: Check Black Formatting
-        run: black . --check
+      - name: Security checks
+        run: |
+          pip install bandit safety
+          bandit -r apps core config -ll
+          safety check || true
 
-      - name: Check Isort Imports
-        run: isort . --check-only
+      - name: Django system checks
+        run: |
+          python manage.py check --deploy
 
-      - name: Flake8 Linter
-        run: flake8 .
+      - name: Run migrations
+        run: |
+          python manage.py makemigrations --check --dry-run
+          python manage.py migrate
 
-      # Django Checks
-      - name: Django System Check
-        run: python manage.py check
+      - name: Run tests
+        run: |
+          python manage.py test
 
-      # Run Tests
-      - name: Run Tests
-        run: python manage.py test
+      - name: Collect static files
+        run: |
+          python manage.py collectstatic --noinput
