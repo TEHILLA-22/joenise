@@ -28,6 +28,9 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Change Directory to Backend
+        run: cd backend   
+         
       - run: pip install -r requirements/base.txt
 
       - run: black . --check
