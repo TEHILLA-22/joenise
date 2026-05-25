@@ -17,9 +17,14 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test_db
-
         ports:
           - 5432:5432
+        # Optional: Add health check to ensure DB is ready before proceeding
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -28,17 +33,32 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Set Environment Variables
+        run: |
+          export DJANGO_SETTINGS_MODULE=config.settings.production
+          echo "DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE" >> $GITHUB_ENV
+
+      # 🔥 CRITICAL FIX: Enter the backend directory
       - name: Change Directory to Backend
-        run: cd backend   
-         
-      - run: pip install -r requirements/base.txt
+        run: cd backend
 
-      - run: black . --check
+      - name: Install Dependencies
+        run: pip install -r requirements/base.txt
 
-      - run: isort . --check-only
+      # Linting Steps
+      - name: Check Black Formatting
+        run: black . --check
 
-      - run: flake8 .
+      - name: Check Isort Imports
+        run: isort . --check-only
 
-      - run: python manage.py check
+      - name: Flake8 Linter
+        run: flake8 .
 
-      - run: python manage.py test
+      # Django Checks
+      - name: Django System Check
+        run: python manage.py check
+
+      # Run Tests
+      - name: Run Tests
+        run: python manage.py test
