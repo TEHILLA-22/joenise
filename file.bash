@@ -116,6 +116,168 @@ PHASE 5 — COMMERCE CORE
 
 
 
+1. Frontend architecture
+2. Design system
+3. App router structure
+4. Authentication infrastructure
+5. Organization context system
+6. API client layer
+7. Permission-aware UI
+8. Dashboard layouts
+9. Commerce modules
+10. Realtime infrastructure
+
+
+frontend/
+├── app/
+│   ├── (auth)/
+│   ├── (dashboard)/
+│   ├── api/
+│
+├── components/
+│   ├── ui/
+│   ├── dashboard/
+│   ├── commerce/
+│   ├── layouts/
+│
+├── lib/
+│   ├── api/
+│   ├── auth/
+│   ├── organizations/
+│   ├── permissions/
+│   ├── utils/
+│
+├── hooks/
+├── services/
+├── stores/
+├── types/
+├── providers/
+├── middleware.ts
+
+
+
+1. Next.js initialization
+2. TypeScript strict mode
+3. ESLint hard fail
+4. Path aliases
+5. Tailwind
+6. shadcn/ui
+7. Axios client
+8. Auth provider
+9. Protected route middleware
+10. Organization context provider
+
+4. API Layer
+
+Create one centralized API client.
+
+lib/
+└── api/
+    ├── client.ts
+    ├── auth.ts
+    ├── products.ts
+    ├── inventory.ts
+    ├── procurement.ts
+    ├── orders.ts
+    ├── payments.ts
+    └── shipping.ts
+
+
+
+    app/
+
+(auth)/
+    login/
+    register/
+    verify-email/
+    forgot-password/
+
+(dashboard)/
+    dashboard/
+
+    products/
+    inventory/
+
+    rfqs/
+    quotations/
+
+    procurement/
+
+    orders/
+    invoices/
+
+    shipments/
+
+    escrow/
+    payments/
+    wallet/
+
+    analytics/
+
+    settings/
+
+admin/
+
+seller/
+
+
+
+
+
+src/
+
+app/
+
+components/
+  ui/
+  layouts/
+  dashboard/
+  auth/
+
+lib/
+  api/
+  auth/
+  organizations/
+
+providers/
+
+hooks/
+
+stores/
+
+types/
+
+services/
+
+src/
+├── services/
+│   └── auth.service.ts
+│
+├── types/
+│   └── auth.ts
+│
+├── hooks/
+│   └── use-login.ts
+│
+├── stores/
+│   └── auth-store.ts
+│
+├── providers/
+│   └── auth-provider.tsx
+
+Page Load
+↓
+POST /auth/refresh/
+↓
+Access Token Returned
+↓
+Store In Zustand Memory
+↓
+GET /auth/me/
+↓
+Store User
+↓
+Render App
 The only minor caveat is that “immutable snapshots” are implemented as copied order item fields rather than a dedicated frozen snapshot/audit history model.
 
 
